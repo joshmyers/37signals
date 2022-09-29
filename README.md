@@ -57,4 +57,13 @@ kube-system   kube-scheduler-minikube            1/1     Running   3 (6m28s ago)
 kube-system   storage-provisioner                1/1     Running   4 (6m28s ago)   1h7m
 ```
 
+#### Seeding Kubernetes secrets
+Because our Dockerised app defaults to using `RAILS_ENV=production`, we need to
+ensure the `SECRET_KEY_BASE` environment variable is set and passed to the app.
+To do this we generate a secure string and store as a Kubernetes secret, that 
+the application has access to.
+
+In reality k8s secrets are just base64 encoded strings, so in production, we'd
+likely want to use something else e.g. [Hashicorp Vault](https://github.com/hashicorp/vault) or [Bitnami Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets)
+
 </details>
