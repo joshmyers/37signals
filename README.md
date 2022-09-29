@@ -17,7 +17,7 @@ a local Sqlite database per pod isn't going to cut it.
 #### Minikube setup
 <details>
 <summary> Installing Kubectl and Minikube to ~/.local/bin </summary>
-
+<br>
 
 We install binaries into ~/.local/bin so as to not require sudo permissions.
 Subsequent Rake tasks assume binaries are in this location, so you may want
