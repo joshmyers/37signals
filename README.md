@@ -1,8 +1,7 @@
 <details>
-<summary> Minikube </summary>
+<summary> Running a local development Minikube cluster </summary>
 
-
-
+## Intro
 We can build our application into a Docker container and deploy it to a local Minikube cluster for testing.
 
 <details>
