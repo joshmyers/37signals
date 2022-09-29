@@ -2,7 +2,6 @@
 <details>
 <summary> Context </summary>
 
-## Context
 We can build our application into a Docker image and deploy it to a local
 Minikube cluster for testing.
 
