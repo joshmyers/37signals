@@ -11,8 +11,9 @@ behaviour and we want to simulate production as much as possible inside our
 cluster. With N pods of our application running inside our Minikube cluster,
 a local Sqlite database per pod isn't going to cut it.
 
+#### Usage
 <details>
-<summary> There are some helper Rake tasks to do this </summary>
+<summary> There are some helper Rake tasks to build and deploy our application to Minikube </summary>
 
 ```bash 
 rake kubectl:install                    # Install Kubectl to ~/.local/bin/kubectl
