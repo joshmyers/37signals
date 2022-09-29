@@ -1,5 +1,6 @@
+## Running a local development Minikube cluster
 <details>
-<summary> Running a local development Minikube cluster </summary>
+<summary> Context </summary>
 
 ## Context
 We can build our application into a Docker image and deploy it to a local
@@ -85,7 +86,7 @@ secret/secret-key-base created
 ```
 
 In reality k8s secrets are just base64 encoded strings, so in production, we'd
-likely want to use something else e.g. [Hashicorp Vault](https://github.com/hashicorp/vault) or [Bitnami Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets).
+likely want to use something else for secrets management e.g. [Hashicorp Vault](https://github.com/hashicorp/vault) or [Bitnami Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets).
 
 
 #### Applying our Kubernetes manifests
@@ -183,7 +184,7 @@ kube-system   kube-scheduler-minikube             1/1     Running   3 (36m ago) 
 kube-system   storage-provisioner                 1/1     Running   4 (36m ago)     1h37m
 ```
 Great, the application is now in a ready state. We can now load up the app in a
-browser at `http://192.168.0.1:32029` and we can confirm that health checks are
+browser at `http://192.168.0.1:32029` and confirm that health checks are
 passing:
 ```
 ❯ curl http://192.168.0.1:32029/health/liveness
