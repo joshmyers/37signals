@@ -4,7 +4,6 @@ We can build our application into a Docker container and deploy it to a local Mi
 
 <details>
 <summary> There are some helper Rake tasks to do this </summary>
-<br>
 
 ```bash 
 rake kubectl:install                    # Install Kubectl to ~/.local/bin/kubectl
