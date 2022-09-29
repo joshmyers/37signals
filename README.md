@@ -1,7 +1,7 @@
 ## Minikube
 <details>
 <summary> Running a local development Kubernetes cluster </summary>
-
+<br>
 We can build our application into a Docker image and deploy it to a local
 Minikube cluster for testing.
 
