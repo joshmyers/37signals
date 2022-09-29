@@ -15,9 +15,9 @@ a local Sqlite database per pod isn't going to cut it.
 * Docker
 
 #### Minikube setup
-We install binaries into ~/.local/bin so as to not require sudo permissions.
+We install binaries into `~/.local/bin` so as to not require sudo permissions.
 Subsequent Rake tasks assume binaries are in this location, so you may want
-to add it to your PATH.
+to add it to your `$PATH`.
 
 ```bash 
 ❯ bundle exec rake kubectl:install
