@@ -31,4 +31,20 @@ rake app:deploy                         # Deploy app to Minikube
 rake app:seed_secret_key_base           # Seed secret-key-base secret
 ```
 </details>
+
+#### Requirements
+* Docker
+
+#### Minikube setup
+<details>
+<summary> Installing Kubectl and Minikube </summary>
+
+```bash 
+rake kubectl:install
+rake minikube:install
+```
+</details>
+
+
+
 </details>
