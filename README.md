@@ -25,7 +25,6 @@ to add it to your `$PATH`.
 ```
 
 #### Starting Minikube
-
 ```bash 
 ❯ bundle exec rake minikube:start
 😄  minikube v1.27.0 on Debian bullseye/sid
@@ -42,6 +41,20 @@ to add it to your `$PATH`.
 ❗  /home/josh/.local/bin/kubectl is version 1.25.2, which may have incompatibilites with Kubernetes 1.22.3.
     ▪ Want kubectl v1.22.3? Try 'minikube kubectl -- get pods -A'
 🏄  Done! kubectl is now configured to use "minikube" cluster and "default" namespace by default
+```
+
+At this point we should be able to see all of the pods running in our cluster,
+in the `kube-system` namespace.
+```
+❯ ~/.local/bin/kubectl get pods --all-namespaces
+NAMESPACE     NAME                               READY   STATUS    RESTARTS        AGE
+kube-system   coredns-78fcd69978-tplgx           1/1     Running   2 (6m23s ago)   1h7m
+kube-system   etcd-minikube                      1/1     Running   3 (6m28s ago)   1h7m
+kube-system   kube-apiserver-minikube            1/1     Running   2 (6m38s ago)   1h7m
+kube-system   kube-controller-manager-minikube   1/1     Running   3 (6m28s ago)   1h7m
+kube-system   kube-proxy-7xkts                   1/1     Running   3 (6m28s ago)   1h7m
+kube-system   kube-scheduler-minikube            1/1     Running   3 (6m28s ago)   1h7m
+kube-system   storage-provisioner                1/1     Running   4 (6m28s ago)   1h7m
 ```
 
 </details>
