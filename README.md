@@ -1,6 +1,6 @@
-## Running a local development Minikube cluster
+## Minikube
 <details>
-<summary> Context </summary>
+<summary> Running a local development Kubernetes cluster </summary>
 
 We can build our application into a Docker image and deploy it to a local
 Minikube cluster for testing.
