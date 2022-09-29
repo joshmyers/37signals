@@ -15,9 +15,6 @@ a local Sqlite database per pod isn't going to cut it.
 * Docker
 
 #### Minikube setup
-<details>
-<summary> ###### Installing Kubectl and Minikube to ~/.local/bin </summary>
-<br>
 We install binaries into ~/.local/bin so as to not require sudo permissions.
 Subsequent Rake tasks assume binaries are in this location, so you may want
 to add it to your PATH.
@@ -26,11 +23,8 @@ to add it to your PATH.
 ❯ bundle exec rake kubectl:install
 ❯ bundle exec rake minikube:install
 ```
-</details>
 
 #### Starting Minikube
-<details>
-<summary> Starting a Minikube cluster </summary>
 
 ```bash 
 ❯ bundle exec rake minikube:start
@@ -49,6 +43,5 @@ to add it to your PATH.
     ▪ Want kubectl v1.22.3? Try 'minikube kubectl -- get pods -A'
 🏄  Done! kubectl is now configured to use "minikube" cluster and "default" namespace by default
 ```
-</details>
 
 </details>
