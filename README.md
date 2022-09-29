@@ -1,4 +1,7 @@
-## Minikube
+<details>
+<summary> Minikube </summary>
+
+
 
 We can build our application into a Docker container and deploy it to a local Minikube cluster for testing.
 
@@ -20,4 +23,5 @@ rake app:db_setup                       # Run db:setup in Minikube
 rake app:deploy                         # Deploy app to Minikube
 rake app:seed_secret_key_base           # Seed secret-key-base secret
 ```
+</details>
 </details>
