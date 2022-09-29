@@ -18,12 +18,37 @@ a local Sqlite database per pod isn't going to cut it.
 <details>
 <summary> Installing Kubectl and Minikube to ~/.local/bin </summary>
 
+We install binaries into ~/.local/bin so as to not require sudo permissions.
+Subsequent Rake tasks assume binaries are in this location, so you may want
+to add it to your PATH.
+
 ```bash 
-rake kubectl:install
-rake minikube:install
+❯ bundle exec rake kubectl:install
+❯ bundle exec rake minikube:install
 ```
 </details>
 
+#### Starting Minikube
+<details>
+<summary> Starting a Minikube cluster </summary>
 
+```bash 
+❯ bundle exec rake minikube:start
+😄  minikube v1.27.0 on Debian bullseye/sid
+🆕  Kubernetes 1.25.0 is now available. If you would like to upgrade, specify: --kubernetes-version=v1.25.0
+✨  Using the docker driver based on existing profile
+👍  Starting control plane node minikube in cluster minikube
+🚜  Pulling base image ...
+🏃  Updating the running docker "minikube" container ...
+🐳  Preparing Kubernetes v1.22.3 on Docker 20.10.17 ...
+🔎  Verifying Kubernetes components...
+    ▪ Using image gcr.io/k8s-minikube/storage-provisioner:v5
+🌟  Enabled addons: storage-provisioner, default-storageclass
+
+❗  /home/josh/.local/bin/kubectl is version 1.25.2, which may have incompatibilites with Kubernetes 1.22.3.
+    ▪ Want kubectl v1.22.3? Try 'minikube kubectl -- get pods -A'
+🏄  Done! kubectl is now configured to use "minikube" cluster and "default" namespace by default
+```
+</details>
 
 </details>
