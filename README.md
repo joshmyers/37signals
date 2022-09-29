@@ -1,7 +1,7 @@
 <details>
 <summary> Running a local development Minikube cluster </summary>
 
-#### Context
+## Context
 We can build our application into a Docker image and deploy it to a local
 Minikube cluster for testing.
 
@@ -11,8 +11,24 @@ behaviour and we want to simulate production as much as possible inside our
 cluster. With N pods of our application running inside our Minikube cluster,
 a local Sqlite database per pod isn't going to cut it.
 
-#### Requirements
+## Requirements
 * Docker
+
+## The tl;dr version
+```
+❯ bundle exec rake kubectl:install
+❯ bundle exec rake minikube:install
+❯ bundle exec rake minikube:start
+❯ bundle exec rake app:seed_secret_key_base
+❯ bundle exec rake app:apply
+❯ bundle exec rake app:db_setup
+```
+
+```
+❯ bundle exec rake app:deploy
+```
+
+## The longer version
 
 #### Minikube setup
 We install binaries into `~/.local/bin` so as to not require sudo permissions.
@@ -165,9 +181,9 @@ kube-system   kube-proxy-7xkts                    1/1     Running   3 (36m ago) 
 kube-system   kube-scheduler-minikube             1/1     Running   3 (36m ago)     1h37m
 kube-system   storage-provisioner                 1/1     Running   4 (36m ago)     1h37m
 ```
-Great, we can see the application is now in a ready state. We can now load up
-the app in a browser at `http://192.168.0.1:32029` and we can confirm that 
-health checks are passing:
+Great, the application is now in a ready state. We can now load up the app in a
+browser at `http://192.168.0.1:32029` and we can confirm that health checks are
+passing:
 ```
 ❯ curl http://192.168.0.1:32029/health/liveness
 {"ok":true,"description":"Service is up and running"}
@@ -176,7 +192,24 @@ health checks are passing:
 {"ok":true,"description":"Service and DB are up and running"}
 ```
 
+#### Local develoment workflow
+OK, so I now want to make some local changes and deploy those out to Minikube,
+how can I do this?
+```
+❯ bundle exec rake app:deploy
+Sending build context to Docker daemon  7.401MB
+Step 1/28 : ARG RUBY_VERSION=2.7.1
+Step 2/28 : ARG BASE_IMAGE=ruby:$RUBY_VERSION-alpine3.11
+Step 3/28 : ARG RAILS_ENV=production
+Step 4/28 : ARG NODE_ENV=production
+Step 5/28 : FROM $BASE_IMAGE AS base
+** SNIP **
+Successfully built d6a25ad15d6c
+Successfully tagged ops-heycamp-josh:latest
+deployment.apps/ops-heycamp-josh patched
+```
 
-
+This will rebuild our image with local changes and deploy it to Minikube using
+a rolling update strategy to ensure no downtime.
 
 </details>
