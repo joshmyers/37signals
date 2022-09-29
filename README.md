@@ -15,6 +15,7 @@ a local Sqlite database per pod isn't going to cut it.
 * Docker
 
 ## The tl;dr version
+#### Bootstrap
 ```
 ❯ bundle exec rake kubectl:install
 ❯ bundle exec rake minikube:install
@@ -23,7 +24,7 @@ a local Sqlite database per pod isn't going to cut it.
 ❯ bundle exec rake app:apply
 ❯ bundle exec rake app:db_setup
 ```
-
+#### Development workflow to deploy local changes
 ```
 ❯ bundle exec rake app:deploy
 ```
