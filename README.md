@@ -64,6 +64,11 @@ To do this we generate a secure string and store as a Kubernetes secret, that
 the application has access to.
 
 In reality k8s secrets are just base64 encoded strings, so in production, we'd
-likely want to use something else e.g. [Hashicorp Vault](https://github.com/hashicorp/vault) or [Bitnami Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets)
+likely want to use something else e.g. [Hashicorp Vault](https://github.com/hashicorp/vault) or [Bitnami Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets).
+```
+❯ bundle exec rake app:seed_secret_key_base
+secret/secret-key-base created
+```
+
 
 </details>
