@@ -5,7 +5,7 @@
 We can build our application into a Docker image and deploy it to a local
 Minikube cluster for testing.
 
-Note that our Dockerfile is setting RAILS_ENV=production as a default when
+Note that our Dockerfile is setting `RAILS_ENV=production` as a default when
 building our image for Minikube. Why? Because RAILS_ENV changes application 
 behaviour and we want to simulate production as much as possible inside our 
 cluster. With N pods of our application running inside our Minikube cluster,
