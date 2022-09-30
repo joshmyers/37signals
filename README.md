@@ -1,216 +1,150 @@
-## Minikube
+## Beta deployment work
 <details>
-<summary> Running a local development Kubernetes cluster </summary>
+<summary> Deploying to EKS with a MySQL backend </summary>
 <br>
-We can build our application into a Docker image and deploy it to a local
-Minikube cluster for testing.
 
-Note that our Dockerfile is setting `RAILS_ENV=production` as a default when
-building our image for Minikube. Why? Because RAILS_ENV changes application 
-behaviour and we want to simulate production as much as possible inside our 
-cluster. With N pods of our application running inside our Minikube cluster,
-a local Sqlite database per pod isn't going to cut it.
-
-## Requirements
-* Docker
-
-## The tl;dr version
-#### Bootstrap
-```
-❯ bundle exec rake kubectl:install
-❯ bundle exec rake minikube:install
-❯ bundle exec rake minikube:start
-❯ bundle exec rake app:seed_secret_key_base
-❯ bundle exec rake app:apply
-❯ bundle exec rake app:db_setup
-```
-#### Development workflow to deploy local changes
-```
-❯ bundle exec rake app:deploy
-```
-
-## The longer version
-
-#### Minikube setup
-We install binaries into `~/.local/bin` so as to not require sudo permissions.
-Subsequent Rake tasks assume binaries are in this location, so you may want
-to add it to your `$PATH`.
-
-```bash 
-❯ bundle exec rake kubectl:install
-❯ bundle exec rake minikube:install
-```
-
-#### Starting Minikube
-```bash 
-❯ bundle exec rake minikube:start
-😄  minikube v1.27.0 on Debian bullseye/sid
-🆕  Kubernetes 1.25.0 is now available. If you would like to upgrade, specify: --kubernetes-version=v1.25.0
-✨  Using the docker driver based on existing profile
-👍  Starting control plane node minikube in cluster minikube
-🚜  Pulling base image ...
-🏃  Updating the running docker "minikube" container ...
-🐳  Preparing Kubernetes v1.22.3 on Docker 20.10.17 ...
-🔎  Verifying Kubernetes components...
-    ▪ Using image gcr.io/k8s-minikube/storage-provisioner:v5
-🌟  Enabled addons: storage-provisioner, default-storageclass
-
-❗  /home/josh/.local/bin/kubectl is version 1.25.2, which may have incompatibilites with Kubernetes 1.22.3.
-    ▪ Want kubectl v1.22.3? Try 'minikube kubectl -- get pods -A'
-🏄  Done! kubectl is now configured to use "minikube" cluster and "default" namespace by default
-```
-
-At this point we should be able to see all of the pods running in our cluster,
-in the `kube-system` namespace.
-```
-❯ ~/.local/bin/kubectl get pods --all-namespaces
-NAMESPACE     NAME                               READY   STATUS    RESTARTS        AGE
-kube-system   coredns-78fcd69978-tplgx           1/1     Running   2 (6m23s ago)   1h7m
-kube-system   etcd-minikube                      1/1     Running   3 (6m28s ago)   1h7m
-kube-system   kube-apiserver-minikube            1/1     Running   2 (6m38s ago)   1h7m
-kube-system   kube-controller-manager-minikube   1/1     Running   3 (6m28s ago)   1h7m
-kube-system   kube-proxy-7xkts                   1/1     Running   3 (6m28s ago)   1h7m
-kube-system   kube-scheduler-minikube            1/1     Running   3 (6m28s ago)   1h7m
-kube-system   storage-provisioner                1/1     Running   4 (6m28s ago)   1h7m
-```
-
-#### Seeding Kubernetes secrets
-Because our Dockerised app defaults to using `RAILS_ENV=production`, we need to
-ensure the `SECRET_KEY_BASE` environment variable is set and passed to the app.
-To do this we generate a secure string and store as a Kubernetes secret, that 
-the application has access to:
-```
-❯ bundle exec rake app:seed_secret_key_base
-secret/secret-key-base created
-```
-
-In reality k8s secrets are just base64 encoded strings, so in production, we'd
-likely want to use something else for secrets management e.g. [Hashicorp Vault](https://github.com/hashicorp/vault) or [Bitnami Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets).
+## MySQL
+In 57542a4 we switched to using MySQL if RAILS_ENV=production. In order to use
+a MySQL backend for all environments, we need to:
+* Add similar changes to `config/database.yaml` for development and testing
+  environments.
+* Remove sqlite3 from the development and test group in our Gemfile, replace
+  with mysql2 (not just for the production group).
+* As this adds a new dependency, rather than a flat sqlite3 DB file, we
+  probably want a way to stand up MySQL for local testing (before Minikube)
+  so we may want to add a docker-compose.yaml to spin up a local MySQL
+  container.
+* Remove sqlite3 flat files from `/db` directory.
 
 
-#### Applying our Kubernetes manifests
-Next up is deploying our k8s manifests to the cluster to create our Service and
-Deployment.
-```
-❯ bundle exec rake app:apply
-Sending build context to Docker daemon  7.401MB
-Step 1/28 : ARG RUBY_VERSION=2.7.1
-Step 2/28 : ARG BASE_IMAGE=ruby:$RUBY_VERSION-alpine3.11
-Step 3/28 : ARG RAILS_ENV=production
-Step 4/28 : ARG NODE_ENV=production
-Step 5/28 : FROM $BASE_IMAGE AS base
-2.7.1-alpine3.11: Pulling from library/ruby
-** SNIP **
-Successfully built d6a25ad15d6c
-Successfully tagged ops-heycamp-josh:latest
-deployment.apps/ops-heycamp-josh created
-service/ops-heycamp-josh created
-deployment.apps/mysql created
-service/mysql created
-persistentvolumeclaim/mysql-pv-claim created
-==> Service available at http://192.168.0.1:32029
-```
+## Provisioning
+There are plenty of good off the shelf, generalised and flexible Terraform
+modules[1], as well as documentation, to provision EKS clusters with 
+managed/unmanaged node pools. As a first pass, I'd see how far we can get 
+using one of these, rather than writing a custom module.
 
-This will build our application image within Minikube Docker context and apply
-our manifests.
+Once we have our EKS cluster up and running, we also need our database. Again,
+I'd reach for an off the shelf RDS module[2] to provision Aurora MySQL.
 
-We can see the final line of output contains the endpoint we can reach our 
-service on, in this case `http://192.168.0.1:32029`
+Assuming we have working EKS/RDS clusters, with a valid kube config and AWS
+credentials to access the cluster, we can now deploy our application to the
+EKS cluster.
 
-If we look at the pods now deployed to our cluster:
-```
-❯ ~/.local/bin/kubectl get pods --all-namespaces
-NAMESPACE     NAME                                READY   STATUS    RESTARTS        AGE
-default       mysql-b94cb54c5-wdkqf               1/1     Running   0               3m28s
-default       ops-heycamp-josh-55b94874db-57vwc   0/1     Running   3 (3m7s ago)    3m28s
-default       ops-heycamp-josh-55b94874db-5ljzd   0/1     Running   3 (3m7s ago)    3m28s
-default       ops-heycamp-josh-55b94874db-7j6zf   0/1     Running   3 (3m7s ago)    3m28s
-default       ops-heycamp-josh-55b94874db-ck6qw   0/1     Running   3 (3m7s ago)    3m28s
-default       ops-heycamp-josh-55b94874db-fd4wk   0/1     Running   3 (3m7s ago)    3m28s
-default       ops-heycamp-josh-55b94874db-hlv5b   0/1     Running   3 (3m10s ago)   3m28s
-default       ops-heycamp-josh-55b94874db-st5f7   0/1     Running   3 (3m6s ago)    3m28s
-default       ops-heycamp-josh-55b94874db-wb8zt   0/1     Running   3 (3m7s ago)    3m28s
-default       ops-heycamp-josh-55b94874db-xswmd   0/1     Running   3 (3m7s ago)    3m28s
-default       ops-heycamp-josh-55b94874db-zgdpr   0/1     Running   3 (3m7s ago)    3m28s
-kube-system   coredns-78fcd69978-tplgx            1/1     Running   2 (31m ago)     5h32m
-kube-system   etcd-minikube                       1/1     Running   3 (31m ago)     1h32m
-kube-system   kube-apiserver-minikube             1/1     Running   2 (31m ago)     1h32m
-kube-system   kube-controller-manager-minikube    1/1     Running   3 (31m ago)     1h32m
-kube-system   kube-proxy-7xkts                    1/1     Running   3 (31m ago)     1h32m
-kube-system   kube-scheduler-minikube             1/1     Running   3 (31m ago)     1h32m
-kube-system   storage-provisioner                 1/1     Running   4 (31m ago)     1h32m
-```
-We can see our application and db pods running. The application is running but
-failing readiness checks, because we haven't created our DB yet, let's do that
-now.
+Bonus points if these resources are provisioned using a CI/CD pipeline/tool 
+like Atlantis[3], rather than being applied locally. For provisioning across
+multiple environments/regions, Terragrunt[4] can help keep our Terraform 
+configuration DRY. Additional bonus points for Terratest/OPA tests for the
+Terraform module, even if it only ends up being a wrapper module around a few
+upstream module invocations.
 
 
-#### DB setup/migrations
-```
-❯ bundle exec rake app:db_setup
-Created database 'ops-heycamp-josh_production'
-D, [2022-09-29T13:48:59.975568 #31] DEBUG -- :    (0.2ms)  SET  @@SESSION.sql_mode = CONCAT(CONCAT(@@sql_mode, ',STRICT_ALL_TABLES'), ',NO_AUTO_VALUE_ON_ZERO'),  @@SESSION.sql_auto_is_null = 0, @@SESSION.wait_timeout = 2147483
--- create_table("microposts", {:force=>:cascade})
-D, [2022-09-29T13:48:59.980900 #31] DEBUG -- :    (0.2ms)  SET  @@SESSION.sql_mode = CONCAT(CONCAT(@@sql_mode, ',STRICT_ALL_TABLES'), ',NO_AUTO_VALUE_ON_ZERO'),  @@SESSION.sql_auto_is_null = 0, @@SESSION.wait_timeout = 2147483
-** SNIP**
-D, [2022-09-29T13:49:09.892606 #31] DEBUG -- :    (2.3ms)  COMMIT
-D, [2022-09-29T13:49:09.892763 #31] DEBUG -- :    (0.1ms)  BEGIN
-D, [2022-09-29T13:49:09.893725 #31] DEBUG -- :   SQL (0.1ms)  INSERT INTO `relationships` (`follower_id`, `followed_id`, `created_at`, `updated_at`) VALUES (41, 1, '2022-09-29 13:49:09', '2022-09-29 13:49:09')
-D, [2022-09-29T13:49:09.895993 #31] DEBUG -- :    (2.2ms)  COMMIT
+## Building and pushing our image to ECR
+In order to deploy our application to EKS, we need to push the image to a 
+remote repo that the EKS kubelet can pull from. Ideally we don't use Dockerhub
+due to rate limiting. ECR should suffice.
+
+The current `app:build` Rake task will build our Docker image using Minikubes
+Docker socket. If we want to build against our local Docker socket, tag and 
+push to a remote repo, we probably want to change this behaviour to build 
+locally and `minikube image load $image:$tag` instead. Then something like:
+
+```bash
+docker build -t ops-heycamp-josh .
+docker tag $remote_repo/ops-heycamp-josh:latest
+docker push $remote_repo/ops-heycamp-josh:latest
 ```
 
-Let's have another look at our running pods:
-```
-❯ ~/.local/bin/kubectl get pods --all-namespaces
-NAMESPACE     NAME                                READY   STATUS    RESTARTS        AGE
-default       mysql-b94cb54c5-wdkqf               1/1     Running   0               8m13s
-default       ops-heycamp-josh-55b94874db-57vwc   1/1     Running   3 (7m52s ago)   8m13s
-default       ops-heycamp-josh-55b94874db-5ljzd   1/1     Running   3 (7m52s ago)   8m13s
-default       ops-heycamp-josh-55b94874db-7j6zf   1/1     Running   3 (7m52s ago)   8m13s
-default       ops-heycamp-josh-55b94874db-ck6qw   1/1     Running   3 (7m52s ago)   8m13s
-default       ops-heycamp-josh-55b94874db-fd4wk   1/1     Running   3 (7m52s ago)   8m13s
-default       ops-heycamp-josh-55b94874db-hlv5b   1/1     Running   3 (7m55s ago)   8m13s
-default       ops-heycamp-josh-55b94874db-st5f7   1/1     Running   3 (7m51s ago)   8m13s
-default       ops-heycamp-josh-55b94874db-wb8zt   1/1     Running   3 (7m52s ago)   8m13s
-default       ops-heycamp-josh-55b94874db-xswmd   1/1     Running   3 (7m52s ago)   8m13s
-default       ops-heycamp-josh-55b94874db-zgdpr   1/1     Running   3 (7m52s ago)   8m13s
-kube-system   coredns-78fcd69978-tplgx            1/1     Running   2 (36m ago)     1h37m
-kube-system   etcd-minikube                       1/1     Running   3 (36m ago)     1h37m
-kube-system   kube-apiserver-minikube             1/1     Running   2 (36m ago)     1h37m
-kube-system   kube-controller-manager-minikube    1/1     Running   3 (36m ago)     1h37m
-kube-system   kube-proxy-7xkts                    1/1     Running   3 (36m ago)     1h37m
-kube-system   kube-scheduler-minikube             1/1     Running   3 (36m ago)     1h37m
-kube-system   storage-provisioner                 1/1     Running   4 (36m ago)     1h37m
-```
-Great, the application is now in a ready state. We can now load up the app in a
-browser at `http://192.168.0.1:32029` and confirm that health checks are
-passing:
-```
-❯ curl http://192.168.0.1:32029/health/liveness
-{"ok":true,"description":"Service is up and running"}
+Ideally this is done in a build pipeline, rather than local, when master merges
+/Github release happen. If we have isolated enough environments we may be able
+to spin up applications in EKS for branch builds too, so may want to push on
+every commit.
 
-❯ curl http://192.168.0.1:32029/health/readiness
-{"ok":true,"description":"Service and DB are up and running"}
-```
 
-#### Local develoment workflow
-OK, so I now want to make some local changes and deploy those out to Minikube,
-how can I do this?
-```
-❯ bundle exec rake app:deploy
-Sending build context to Docker daemon  7.401MB
-Step 1/28 : ARG RUBY_VERSION=2.7.1
-Step 2/28 : ARG BASE_IMAGE=ruby:$RUBY_VERSION-alpine3.11
-Step 3/28 : ARG RAILS_ENV=production
-Step 4/28 : ARG NODE_ENV=production
-Step 5/28 : FROM $BASE_IMAGE AS base
-** SNIP **
-Successfully built d6a25ad15d6c
-Successfully tagged ops-heycamp-josh:latest
-deployment.apps/ops-heycamp-josh patched
-```
+## Deloying
+Applying raw k8s manifests maybe good enough for our local Minikube cluster, but
+when it comes to deploying actual applications to production we want to manage 
+these manifests more intelligently.
 
-This will rebuild our image with local changes and deploy it to Minikube using
-a rolling update strategy to ensure no downtime.
+While there are many deployment tools to provide higher layers of abstraction,
+Helm[5] is probably the most widely used. Helm is a package manager for 
+Kubernetes. It helps deploy complex application by bundling necessary resources
+into Charts, which contain all the information to run images in a cluster.
+Helm provides templating functionality in Charts using values files and
+understands the concept of a release.
+
+We may already have a Helm chart for deploying RoR applications, where we can
+plug in some values and have our resources installed to the cluster. If we 
+don't, we need to create the chart using `helm create` and then deploy the 
+chart using `helm upgrade --install`. Again, plenty of docs out there how to
+deploy to Kubernetes using Helm.
+
+
+## TODO
+* Multiarch Docker builds. Do we want to build multi arch images (manifests)
+  for e.g. Linux amd64/Darwin ARM (read: M1/M2)
+* The application currently connects to `mysql` as the root user. No bueno.
+  We should create a new MySQL user with limited permissions and have the 
+  application connect as that user.
+* Do we have a production go live checklist?
+* Application logs to STDOUT, so we can fetch logs via `kubectl logs` but we
+  probably want to ship these logs somewhere. Maybe a SaaS offering like 
+  DataDog. To do this you could run a datadog agent image as a daemon set (so
+  we get one per node) in the cluster or perhaps something like Fluentd for
+  future flexibility about where we want these outputted to.
+* What security concerns do we have for this application? Are there other 
+  applications/services in the cluster that we don't want it to be able to talk
+  to? If so, look into network policies.
+* If we want CarrierWave to upload images to S3 using fog (see dbe35ad) we need
+  an IAM role for the service account and an IAM cluster role binding for our 
+  application.
+* Pass in our RDS host (or a CNAME for it) to our application environment as
+  `DB_HOST`.
+* How are we monitoring our application/gathering application and business level
+  metrics? We could deploy the Prometheus operator[6] and add annotations to our
+  application deloyment/service to have a `/metrics` endpoint scraped as well as
+  HTTP/Kubernetes service endpoint probes etc. See [7] for instrumentation 
+  documentation. We can also monitor our Aurora instance using a Prometheus RDS
+  exporter and if we have unmanaged EKS node pools, the Blackbox node exporter
+  can provide node level instrumentation. Wherever we have monitoring, we 
+  should also have alerting e.g. Alert manager. DataDog could also be used here
+  but $$$.
+* RDS Backup/restore process. What is it? How often do we practice restores?
+* Do we have a run book for what an on-call engineer is expected to do should
+  they get paged about this application?
+* Define the business level impact for this application, should there be issues.
+* Do we have SLOs/SLAs for this application? How were they determined, what is
+  the impact if they are breached?
+* Do we have Horizontal/Vertical Pod Autoscalers (to scale up the number of replicas)
+  and or Node Autoscaler if running with unmanaged nodes?
+* Do we want to remove the DB dependency check from our application readiness
+  probe? See 8f58536
+* Do we have RBAC setup in the cluster?
+* What egress do this application require? Lock down egress from the application via
+  network policies or security groups. Access to S3 could be provided by a 
+  VPC endpoint, so not traversing the internet.
+
+
+[1]
+https://github.com/cloudposse/terraform-aws-eks-cluster
+https://github.com/terraform-aws-modules/terraform-aws-eks
+
+[2]
+https://github.com/terraform-aws-modules/terraform-aws-rds-aurora
+https://github.com/cloudposse/terraform-aws-rds-cluster
+
+[3]
+https://github.com/runatlantis/atlantis
+
+[4]
+https://github.com/gruntwork-io/terragrunt
+
+[5]
+https://github.com/helm/helm
+
+[6]
+https://github.com/prometheus-operator/prometheus-operator
+
+[7]
+https://github.com/prometheus/client_ruby
 
 </details>
